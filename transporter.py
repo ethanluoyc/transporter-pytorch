@@ -145,7 +145,7 @@ def gaussian_map(features, std=0.2):
 
     u = torch.stack([x, y], -1).unsqueeze(0).unsqueeze(0)  # N, K, 2
     # N, K, H, W, 2 -> NKHW
-    return dist.log_prob(u).sum(-1).sum(1, keepdim=True).exp()
+    return dist.log_prob(u).sum(-1).exp()
 
 
 def transport(source_keypoints, target_keypoints, source_features,
@@ -161,8 +161,9 @@ def transport(source_keypoints, target_keypoints, source_features,
     Returns
     =======
     """
-    return (1 - source_keypoints) * (1 - target_keypoints) * source_features + \
-        target_keypoints * target_features
+    for s, t in zip(torch.unbind(source_keypoints, 1), torch.unbind(target_keypoints, 1)):
+        out = (1 - s.unsqueeze(1)) * (1 - t.unsqueeze(1)) * source_features + t.unsqueeze(1) * target_features
+    return out
 
 
 class Transporter(nn.Module):
@@ -184,10 +185,10 @@ class Transporter(nn.Module):
         target_keypoints = gaussian_map(
             spatial_softmax(self.point_net(target_images)), std=self.std)
 
-        transported_features = transport(source_features.detach(),
-                                         target_features,
-                                         source_keypoints.detach(),
-                                         target_keypoints)
+        transported_features = transport(source_keypoints.detach(),
+                                         target_keypoints,
+                                         source_features.detach(),
+                                         target_features)
 
         assert transported_features.shape == target_features.shape
 

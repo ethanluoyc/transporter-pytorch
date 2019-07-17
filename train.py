@@ -4,11 +4,9 @@ import numpy as np
 import transporter
 import torch.utils.data
 
-batch_size = 32
+batch_size = 64
 image_channels = 3
 k = 4
-
-num_features = 64
 
 feature_encoder = transporter.FeatureEncoder(image_channels)
 pose_regressor = transporter.PoseRegressor(image_channels, k)
@@ -29,9 +27,11 @@ model = transporter.Transporter(
 )
 model.cuda()
 
-optimizer = torch.optim.Adam(model.parameters())
+optimizer = torch.optim.Adam(model.parameters(), 5e-4)
 
 for num_epoch in range(10000):
+    count = 0.0
+    value = 0.0
     for xt, xtp1 in loader:
         xt = xt.cuda()
         xtp1 = xtp1.cuda()
@@ -41,5 +41,7 @@ for num_epoch in range(10000):
         loss.backward()
 
         optimizer.step()
-    print("Epoch ", num_epoch, "Loss ", loss)
+        value += loss.detach().item() * len(xt)
+        count += len(xt)
+    print("Epoch ", num_epoch, "Loss ", loss, "Avg Loss ", value / count)
     torch.save(model.state_dict(), "model.pth")
