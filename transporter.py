@@ -119,9 +119,9 @@ def f(features):
     S_col = features.sum(-2)  # N, K, W
 
     # N, K
-    u_row = S_row.mul(torch.linspace(-1, 1, S_row.size(-1))).sum(-1)
+    u_row = S_row.mul(torch.linspace(-1, 1, S_row.size(-1), dtype=features.dtype, device=features.device)).sum(-1)
     # N, K
-    u_col = S_col.mul(torch.linspace(-1, 1, S_col.size(-1))).sum(-1)
+    u_col = S_col.mul(torch.linspace(-1, 1, S_col.size(-1), dtype=features.dtype, device=features.device)).sum(-1)
     return u_row, u_col
 
 
@@ -132,14 +132,14 @@ def gaussian_map(features, std=0.2):
 
     dist = torch.distributions.Normal(
         loc=mu,
-        scale=torch.ones_like(mu, dtype=mu.dtype) * std,
+        scale=torch.ones_like(mu, dtype=mu.dtype, device=features.device) * std,
     )  # N, K, 1, 1, 2
     height = features.size(2)
     width = features.size(3)
 
     x, y = torch.meshgrid(
-        torch.linspace(-1, 1, width, dtype=mu.dtype),
-        torch.linspace(-1, 1, height, dtype=mu.dtype))
+        torch.linspace(-1, 1, width, dtype=mu.dtype, device=mu.device),
+        torch.linspace(-1, 1, height, dtype=mu.dtype, device=mu.device))
     # x, y (H, W)
     # u: (1, 1, H, W, 2)
 
