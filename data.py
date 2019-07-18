@@ -1,5 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import torch
+import json
+from PIL import Image
+import torch.utils.data
 
 
 def generate(num_samples=1, 
@@ -40,3 +44,52 @@ def vis_sample(sample):
     ax[1].imshow(imt, cmap='gray')
     for a in ax.flat:
         a.set_axis_off()
+
+
+class Dataset(object):
+    _meta_data_file = 'metadata.json'
+    def __init__(self, root, transform=None):
+        self._root = root
+        self._transform = transform
+        with open('{}/{}'.format(root, self._meta_data_file), 'rt') as inp:
+            self._metadata = json.load(inp)
+
+    @property
+    def num_trajectories(self):
+        return self._metadata['num_trajectories']
+
+    @property
+    def num_timesteps(self):
+        return self._metadata['num_timesteps']
+
+    def __len__(self):
+        raise NotImplementedError
+
+    def get_image(self, n, t):
+        im = np.array(Image.open('{}/{}/{}.png'.format(self._root, n, t)))
+        return im
+
+    def __getitem__(self, idx):
+        n, t, tp1 = idx
+        imt = np.array(Image.open('{}/{}/{}.png'.format(self._root, n, t)))
+        imtp1 = np.array(Image.open('{}/{}/{}.png'.format(self._root, n, tp1)))
+        if self._transform is not None:
+            imt = self._transform(imt)
+            imtp1 = self._transform(imtp1)
+
+        return imt, imtp1
+
+class Sampler(torch.utils.data.Sampler):
+    def __init__(self, dataset):
+        self._dataset = dataset
+
+    def __iter__(self):
+        while True:
+            n = np.random.randint(self._dataset.num_trajectories)
+            num_images = self._dataset.num_timesteps
+            t_ind = np.random.randint(0, num_images // 2)
+            tp1_ind = np.random.randint(num_images // 2, num_images)
+            yield n, t_ind, tp1_ind
+
+    def __len__(self):
+        raise NotImplementedError

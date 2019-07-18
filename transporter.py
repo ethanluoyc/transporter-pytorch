@@ -70,7 +70,7 @@ class PoseRegressor(nn.Module):
         
         Returns
         =======
-        y: (N, C, H, K) tensor.
+        y: (N, k, H', W') tensor.
         """
         x = self.net(x)
         return self.regressor(x)
@@ -114,7 +114,7 @@ def renormalize(heatmaps):
     return heatmaps
 
 
-def f(features):
+def compute_keypoint_location_mean(features):
     S_row = features.sum(-1)  # N, K, H
     S_col = features.sum(-2)  # N, K, W
 
@@ -122,28 +122,26 @@ def f(features):
     u_row = S_row.mul(torch.linspace(-1, 1, S_row.size(-1), dtype=features.dtype, device=features.device)).sum(-1)
     # N, K
     u_col = S_col.mul(torch.linspace(-1, 1, S_col.size(-1), dtype=features.dtype, device=features.device)).sum(-1)
-    return u_row, u_col
+    return torch.stack((u_row, u_col), -1) # N, K, 2
 
 
 def gaussian_map(features, std=0.2):
-    mu = torch.stack(f(features), -1)  # N, K, 2
-    mu = mu.unsqueeze(-2).unsqueeze(-2)
-    # print(mu.shape)
+    # features: (N, K, H, W)
+    mu = compute_keypoint_location_mean(features)  # N, K, 2
+    mu = mu.unsqueeze(-2).unsqueeze(-2) # N, K, 1, 1, 2
 
     dist = torch.distributions.Normal(
         loc=mu,
         scale=torch.ones_like(mu, dtype=mu.dtype, device=features.device) * std,
     )  # N, K, 1, 1, 2
-    height = features.size(2)
-    width = features.size(3)
+    height = features.size(-2)
+    width = features.size(-1)
 
     x, y = torch.meshgrid(
         torch.linspace(-1, 1, width, dtype=mu.dtype, device=mu.device),
         torch.linspace(-1, 1, height, dtype=mu.dtype, device=mu.device))
     # x, y (H, W)
-    # u: (1, 1, H, W, 2)
-
-    u = torch.stack([x, y], -1).unsqueeze(0).unsqueeze(0)  # N, K, 2
+    u = torch.stack([x, y], -1).unsqueeze(0).unsqueeze(0) # u: (1, 1, H, W, 2)
     # N, K, H, W, 2 -> NKHW
     return dist.log_prob(u).sum(-1).exp()
 
