@@ -127,23 +127,23 @@ def compute_keypoint_location_mean(features):
 
 def gaussian_map(features, std=0.2):
     # features: (N, K, H, W)
+    width, height = features.size(-1), features.size(-2)
     mu = compute_keypoint_location_mean(features)  # N, K, 2
-    mu = mu.unsqueeze(-2).unsqueeze(-2) # N, K, 1, 1, 2
+    mu_y, mu_x = mu[:, :, 0:1], mu[:, :, 1:2]
+    y = torch.linspace(-1.0, 1.0, height, dtype=mu.dtype, device=mu.device)
+    x = torch.linspace(-1.0, 1.0, width, dtype=mu.dtype, device=mu.device)
+    mu_y, mu_x = mu_y.unsqueeze(-1), mu_x.unsqueeze(-1)
 
-    dist = torch.distributions.Normal(
-        loc=mu,
-        scale=torch.ones_like(mu, dtype=mu.dtype, device=features.device) * std,
-    )  # N, K, 1, 1, 2
-    height = features.size(-2)
-    width = features.size(-1)
+    y = torch.reshape(y, [1, 1, height, 1])
+    x = torch.reshape(x, [1, 1, 1, width])
 
-    x, y = torch.meshgrid(
-        torch.linspace(-1, 1, width, dtype=mu.dtype, device=mu.device),
-        torch.linspace(-1, 1, height, dtype=mu.dtype, device=mu.device))
-    # x, y (H, W)
-    u = torch.stack([x, y], -1).unsqueeze(0).unsqueeze(0) # u: (1, 1, H, W, 2)
-    # N, K, H, W, 2 -> NKHW
-    return dist.log_prob(u).sum(-1).exp()
+    inv_std = 1 / std
+    g_y = torch.pow(y - mu_y, 2)
+    g_x = torch.pow(x - mu_x, 2)
+    dist = (g_y + g_x) * inv_std**2
+    g_yx = torch.exp(-dist)
+    # g_yx = g_yx.permute([0, 2, 3, 1])
+    return g_yx
 
 
 def transport(source_keypoints, target_keypoints, source_features,
