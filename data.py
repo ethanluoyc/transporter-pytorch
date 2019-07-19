@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import torch
 import json
 from PIL import Image
@@ -87,8 +86,8 @@ class Sampler(torch.utils.data.Sampler):
         while True:
             n = np.random.randint(self._dataset.num_trajectories)
             num_images = self._dataset.num_timesteps
-            t_ind = np.random.randint(0, num_images // 2)
-            tp1_ind = np.random.randint(num_images // 2, num_images)
+            t_ind = np.random.randint(0, num_images - 20)
+            tp1_ind = t_ind + np.random.randint(20)
             yield n, t_ind, tp1_ind
 
     def __len__(self):
