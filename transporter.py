@@ -159,8 +159,9 @@ def transport(source_keypoints, target_keypoints, source_features,
     Returns
     =======
     """
+    out = source_features
     for s, t in zip(torch.unbind(source_keypoints, 1), torch.unbind(target_keypoints, 1)):
-        out = (1 - s.unsqueeze(1)) * (1 - t.unsqueeze(1)) * source_features + t.unsqueeze(1) * target_features
+        out = (1 - s.unsqueeze(1)) * (1 - t.unsqueeze(1)) * out + t.unsqueeze(1) * target_features
     return out
 
 
