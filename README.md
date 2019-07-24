@@ -18,7 +18,7 @@ Check `python generate_data.py -h` for usage.
 To train the Transporter model. Run 
 
 ```python
-python train.py
+python train_pong.py
 ```
 
 A notebook `demo.ipynb` has also been added for demonstration purpose. The notebook includes visualization of

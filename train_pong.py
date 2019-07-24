@@ -93,7 +93,7 @@ def main():
 
             summary_writer.add_image('xt', xt_grid, global_step=itr)
             summary_writer.add_image('xtp1', xtp1_grid, global_step=itr)
-            summary_writer.add_image('reconst_xtp1', reconst_grid.detach().numpy(), global_step=itr)
+            summary_writer.add_image('reconst_xtp1', reconst_grid, global_step=itr)
 
         if itr > config.num_iterations:
             break
