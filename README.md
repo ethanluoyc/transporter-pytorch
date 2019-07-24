@@ -3,6 +3,7 @@
 https://arxiv.org/abs/1906.11883
 
 ![timesteps figure](assets/timesteps.png)
+![heatmaps figure](assets/heatmaps_unnormalized.png)
 
 
 
