@@ -1,10 +1,15 @@
+from datetime import datetime
+import socket
+import os
 import torch
 import torch.utils.data
+from torch.utils.tensorboard import SummaryWriter
+import torchvision
 from torchvision import transforms
-
 from data import Dataset, Sampler
 import transporter
 import utils
+
 
 
 def get_config():
@@ -21,6 +26,8 @@ def get_config():
     config.learning_rate_decay_every_n_steps = int(1e5)
     config.report_every_n_steps = 100
 
+    current_time = datetime.now().strftime('%b%d_%H-%M-%S')
+    config.log_dir = os.path.join('runs', current_time + '_' + socket.gethostname())
     return config
 
 
@@ -42,6 +49,7 @@ def _get_data_loader(config):
 
 def main():
     config = get_config()
+    print("Running with config\n{}".format(config))
 
     model = _get_model(config)
     model = model.to(config.device)
@@ -53,6 +61,11 @@ def main():
         optimizer,
         config.learning_rate_decay_every_n_steps,
         gamma=config.learning_rate_decay_rate)
+
+    os.makedirs(config.log_dir, exist_ok=True)
+    print("Logs are written to {}".format(config.log_dir))
+
+    summary_writer = SummaryWriter(config.log_dir)
 
     for itr, (xt, xtp1) in enumerate(loader):
         model.train()
@@ -67,9 +80,22 @@ def main():
         scheduler.step()
         if itr % config.report_every_n_steps == 0:
             print("Itr ", itr, "Loss ", loss)
-            torch.save(model.state_dict(), "model.pth")
+
+            torch.save(model.state_dict(), os.path.join(config.log_dir, "model.pth"))
+
+            summary_writer.add_scalar(
+                'reconstruction_loss', loss, global_step=itr)
+            reconst_grid = torchvision.utils.make_grid(reconstruction)
+            xt_grid = torchvision.utils.make_grid(xt)
+            xtp1_grid = torchvision.utils.make_grid(xtp1)
+
+            summary_writer.add_image('xt', xt_grid, global_step=itr)
+            summary_writer.add_image('xtp1', xtp1_grid, global_step=itr)
+            summary_writer.add_image('reconst_xtp1', reconst_grid.detach().numpy(), global_step=itr)
+
         if itr > config.num_iterations:
             break
+        summary_writer.close()
 
 
 if __name__ == "__main__":
