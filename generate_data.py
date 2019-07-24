@@ -7,6 +7,7 @@ import baselines
 from baselines.common.atari_wrappers import make_atari, wrap_deepmind, WarpFrame
 from torchvision import transforms
 from tqdm import tqdm
+import numpy as np
 
 
 def main():
@@ -14,11 +15,13 @@ def main():
     parser.add_argument('--datadir', default='data')
     parser.add_argument('--num_steps', default=100, type=int)
     parser.add_argument('--num_trajectories', default=10, type=int)
+    parser.add_argument('--seed', default=4242, type=int)
     args = parser.parse_args()
 
     num_trajectories = args.num_trajectories
     datadir = args.datadir
     num_steps = args.num_steps
+    np.random.seed(args.seed)
 
     def make_env(env_id, num_steps):
         env = make_atari(env_id, max_episode_steps=num_steps)

@@ -77,6 +77,10 @@ class Dataset(object):
             imtp1 = self._transform(imtp1)
 
         return imt, imtp1
+    
+    def get_trajectory(self, idx):
+        images = [np.array(Image.open('{}/{}/{}.png'.format(self._root, idx, t))) for t in range(self.num_timesteps)]
+        return [self._transform(im) for im in images]
 
 class Sampler(torch.utils.data.Sampler):
     def __init__(self, dataset):

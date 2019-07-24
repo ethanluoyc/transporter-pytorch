@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 import socket
 import os
@@ -16,8 +17,7 @@ def get_config():
     config = utils.ConfigDict({})
     config.dataset_root = 'data'
     config.batch_size = 64
-    config.device = torch.device(
-        "cuda:0" if torch.cuda.is_available() else "cpu")
+    config.device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
     config.image_channels = 3
     config.k = 4
     config.num_iterations = int(1e6)
@@ -49,7 +49,7 @@ def _get_data_loader(config):
 
 def main():
     config = get_config()
-    print("Running with config\n{}".format(config))
+    print('Running with config\n{}'.format(config))
 
     model = _get_model(config)
     model = model.to(config.device)
@@ -63,7 +63,9 @@ def main():
         gamma=config.learning_rate_decay_rate)
 
     os.makedirs(config.log_dir, exist_ok=True)
-    print("Logs are written to {}".format(config.log_dir))
+    print('Logs are written to {}'.format(config.log_dir))
+    with open(os.path.join(config.log_dir, 'config.json'), 'wt') as outf:
+        json.dump(config, outf, indent=2)
 
     summary_writer = SummaryWriter(config.log_dir)
 
@@ -79,9 +81,9 @@ def main():
         optimizer.step()
         scheduler.step()
         if itr % config.report_every_n_steps == 0:
-            print("Itr ", itr, "Loss ", loss)
+            print('Itr ', itr, 'Loss ', loss)
 
-            torch.save(model.state_dict(), os.path.join(config.log_dir, "model.pth"))
+            torch.save(model.state_dict(), os.path.join(config.log_dir, 'model.pth'))
 
             summary_writer.add_scalar(
                 'reconstruction_loss', loss, global_step=itr)
