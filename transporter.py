@@ -99,21 +99,6 @@ class RefineNet(nn.Module):
         """
         return self.net(x)
 
-
-def renormalize(heatmaps):
-    """
-    Args
-    ====
-    heatmaps: (N, K * 2, H, W)
-    
-    Returns
-    =======
-    renormalized_heatmaps (N, K, H, W, 2)
-    """
-
-    return heatmaps
-
-
 def compute_keypoint_location_mean(features):
     S_row = features.sum(-1)  # N, K, H
     S_col = features.sum(-2)  # N, K, W

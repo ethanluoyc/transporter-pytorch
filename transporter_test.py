@@ -31,14 +31,14 @@ class TransporterTest(unittest.TestCase):
 
     def testGaussianMap(self):
         num_keypoints = 5
-        features = torch.zeros(batch_size, num_features, 32, 32)
+        features = torch.zeros(batch_size, num_keypoints, 32, 32)
         heatmaps = transporter.gaussian_map(features)
-        self.assertEqual(heatmaps.shape, (batch_size, 1, 32, 32))
+        self.assertEqual(heatmaps.shape, (batch_size, num_keypoints, 32, 32))
 
     def testTransport(self):
         N, K, H, W, D = 1, 2, 32, 32, 4
-        source_keypoints = torch.zeros(N, 1, H, W)
-        target_keypoints = torch.zeros(N, 1, H, W)
+        source_keypoints = torch.zeros(N, K, H, W)
+        target_keypoints = torch.zeros(N, K, H, W)
         source_features  = torch.zeros(N, D, H, W)
         target_features = torch.zeros(N, D, H, W)
         transported = transporter.transport(
