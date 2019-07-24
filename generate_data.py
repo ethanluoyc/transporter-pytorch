@@ -1,18 +1,24 @@
-import baselines
-import gym
 import os
-from PIL import Image
 import json
-import numpy as np
+import argparse
+
+from PIL import Image
+import baselines
 from baselines.common.atari_wrappers import make_atari, wrap_deepmind, WarpFrame
 from torchvision import transforms
 from tqdm import tqdm
 
 
 def main():
-    num_trajectoris = 10
-    datadir = 'data/'
-    num_steps = 100
+    parser = argparse.ArgumentParser(description='Generate Pong trajectories.')
+    parser.add_argument('--datadir', default='data')
+    parser.add_argument('--num_steps', default=100, type=int)
+    parser.add_argument('--num_trajectories', default=10, type=int)
+    args = parser.parse_args()
+
+    num_trajectories = args.num_trajectories
+    datadir = args.datadir
+    num_steps = args.num_steps
 
     def make_env(env_id, num_steps):
         env = make_atari(env_id, max_episode_steps=num_steps)
@@ -20,8 +26,9 @@ def main():
 
     env = make_env('PongNoFrameskip-v4', num_steps)
     obs = env.reset()
-    with tqdm(total=num_trajectoris * num_steps) as pbar:
-        for n in range(num_trajectoris):
+    print("Data will be saved to {}".format(datadir))
+    with tqdm(total=num_trajectories * num_steps) as pbar:
+        for n in range(num_trajectories):
             os.makedirs('{}/{}'.format(datadir, n), exist_ok=True)
             obs = env.reset()
             t = 0
@@ -37,7 +44,7 @@ def main():
             pbar.update(num_steps)
         with open('{}/metadata.json'.format(datadir), 'w') as out:
             json.dump({
-                'num_trajectories': num_trajectoris,
+                'num_trajectories': num_trajectories,
                 'num_timesteps': num_steps
             }, out)
 
